@@ -565,9 +565,9 @@
     <div class="chat-window" id="chatWindow">
       <div class="msg bot">Hi! I'm here to help you find your way to support NayePankh Foundation. Are you looking to donate, volunteer, or just learn more?</div>
       <div class="quick-replies" id="quickReplies">
-        <div class="quick-reply" onclick="sendQuick('I want to donate')">💛 I want to donate</div>
-        <div class="quick-reply" onclick="sendQuick('I want to volunteer')">🤝 I want to volunteer</div>
-        <div class="quick-reply" onclick="sendQuick('Tell me about your work')">📖 Tell me about your work</div>
+        <div class="quick-reply" onclick="sendQuick('I want to donate', 'donate')">💛 I want to donate</div>
+        <div class="quick-reply" onclick="sendQuick('I want to volunteer', 'volunteer')">🤝 I want to volunteer</div>
+        <div class="quick-reply" onclick="sendQuick('Tell me about your work', 'about')">📖 Tell me about your work</div>
       </div>
     </div>
 
@@ -637,26 +637,19 @@
 
 <script>
 // =========================================================================
-// PASTE YOUR GEMINI API KEY BELOW BEFORE DEPLOYING.
-// Get one free at https://aistudio.google.com -> "Get API key"
-// IMPORTANT: Restrict this key by HTTP referrer to your GitHub Pages URL
-// (e.g. https://yourusername.github.io/*) in AI Studio's key settings
-// BEFORE you push this file publicly. Never commit an unrestricted key.
+// DEMO MODE: This assistant uses pre-written responses for the three
+// quick-reply options below, shown immediately with no external calls.
+// It demonstrates the intended chat interface and conversation flow.
+// A production version would connect this same interface to a live AI
+// API (e.g. Claude or Gemini) to handle open-ended, free-text questions.
 // =========================================================================
-const GEMINI_API_KEY = "AQ.Ab8RN6JCK-9t45t8s7PG_fIos3T2I0umQotbLGyXwBwi8hZBrQ";
-const GEMINI_MODEL = "gemini-3.5-flash"; // free tier: 10 RPM / 250 RPD as of mid-2026
 
-const SYSTEM_PROMPT = `You are "Pankh Assistant," the friendly AI helper embedded on the NayePankh Foundation website.
-
-NayePankh Foundation is a UP Government registered NGO (80G and 12A certified) that has helped over 2 lakh underprivileged people through:
-- Food distribution drives
-- Sanitary napkin and clothing donation drives
-- Education support initiatives for underprivileged students
-Active primarily in Kanpur, Ghaziabad, and nearby cities in India. Founded around 2021.
-
-Your job: answer visitor questions about donating, volunteering, or learning about NayePankh's work, in a warm, concise, conversational tone. Keep responses under 80 words. Always end with a clear next step (e.g. "Want me to point you to the donate page?" or "Want to tell me your city so I can find a drive near you?"). If asked something outside NayePankh's scope, politely redirect to relevant topics. Never invent specific statistics beyond what's stated above — if asked for numbers you don't have, say the exact figures aren't available here but the visitor's coordinator can share specifics.`;
-
-let conversationHistory = [];
+const RESPONSES = {
+  donate: "We'd love your support! NayePankh Foundation is 80G and 12A certified, so your donation is tax-deductible. You can contribute via the Donate button above — every rupee goes directly toward food, education, and dignity drives. Want to know what your donation funds?",
+  volunteer: "We're always looking for hands on deck! Volunteers help with food distribution, education support, and awareness drives across Kanpur, Ghaziabad, and nearby cities. Reach out through our contact links in the footer with your name, city, and availability, and a coordinator will follow up.",
+  about: "NayePankh Foundation has reached over 2 lakh people through three core programs: food distribution drives, clothing and sanitary care drives, and education support for underprivileged students. We're a UP Government registered NGO, active since 2021. Want to know how to get involved?",
+  fallback: "That's outside what this demo assistant can answer directly — in the full version, this chat would connect to a live AI API to handle open-ended questions like that. For now, try one of the quick options above, or reach out via the contact links in the footer."
+};
 
 function appendMessage(text, sender) {
   const chatWindow = document.getElementById('chatWindow');
@@ -688,9 +681,9 @@ function removeTyping() {
   if (typing) typing.remove();
 }
 
-function sendQuick(text) {
+function sendQuick(label, key) {
   removeQuickReplies();
-  processMessage(text);
+  respondTo(label, key);
 }
 
 function sendMessage() {
@@ -699,47 +692,19 @@ function sendMessage() {
   if (!text) return;
   removeQuickReplies();
   input.value = '';
-  processMessage(text);
+  respondTo(text, 'fallback');
 }
 
-async function processMessage(text) {
-  appendMessage(text, 'user');
-  conversationHistory.push({ role: 'user', parts: [{ text: text }] });
+function respondTo(userText, key) {
+  appendMessage(userText, 'user');
   showTyping();
 
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_KEY_HERE") {
+  // Simulated thinking delay for a natural feel — not a real network call
+  setTimeout(() => {
     removeTyping();
-    appendMessage("Demo mode: no API key has been set yet. Once a Gemini API key is added at the top of the script, I'll respond with real AI-generated answers.", 'bot');
-    return;
-  }
-
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: conversationHistory,
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-          generationConfig: { maxOutputTokens: 300 }
-        })
-      }
-    );
-    const data = await response.json();
-    removeTyping();
-
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text
-      || "Sorry, I couldn't process that — could you try rephrasing?";
-
-    appendMessage(reply, 'bot');
-    conversationHistory.push({ role: 'model', parts: [{ text: reply }] });
-  } catch (err) {
-    removeTyping();
-    appendMessage("I'm having trouble connecting right now. Please try again in a moment, or reach out to NayePankh directly via the contact links below.", 'bot');
-  }
+    appendMessage(RESPONSES[key] || RESPONSES.fallback, 'bot');
+  }, 700);
 }
-
 </script>
 
 </body>
